@@ -1,9 +1,12 @@
-<<<<<<< HEAD
 # Sentinel2_SRx4
-=======
-# 遥感图像超分辨率GAN项目（SR_x4）
 
-本项目基于Real-ESRGAN架构，针对遥感TIF影像进行4倍超分辨率重建，支持大图分块、地理信息保持、USM锐化等功能，适合遥感影像增强与科研应用。
+本项目基于Real-ESRGAN架构，针对遥感TIF影像进行4倍超分辨率重建，支持大图分块、地理信息保持、USM锐化等功能，适合遥感影像增强。
+
+参考：
+（1）https://github.com/xinntao/Real-ESRGAN
+（2）https://github.com/lauraset/Super-resolution-building-height-estimation.git
+（3）遥感大图像深度学习忽略边缘（划窗）预测 - 开源<em>遥感</em>的文章 - 知乎
+     https://zhuanlan.zhihu.com/p/158769096
 
 ---
 
@@ -17,6 +20,7 @@ SR/SR_x4/
 ├── rrdbnet_arch.py      # RRDBNet生成器与判别器结构
 ├── split.py             # 数据集分割工具
 ├── __init__.py
+├── S2_download(GEE).txt # GEE下载Sentinel2影像代码
 ../model/
     └── netG_latest.pth  # 训练生成器权重
 ../pretrained/
@@ -37,8 +41,18 @@ SR/SR_x4/
 - matplotlib >= 3.3.0
 - tqdm >= 4.60.0
 
-
 ## 数据准备
+
+### 1. Sentinel2影像下载
+
+使用 `S2_download(GEE).txt` 中的Google Earth Engine代码下载Sentinel2影像：
+
+- 支持云掩膜处理
+- 自动选择蓝、绿、红波段（B2、B3、B4）
+- 输出8位无符号整型GeoTIFF格式
+- 可自定义时间范围和云覆盖阈值
+
+### 2. 数据集目录结构
 
 数据集目录结构建议如下：
 
@@ -114,6 +128,11 @@ python predict.py
 
 - 基于RRDBNet的生成器，UNet判别器，谱归一化
 - 支持TIF遥感影像，自动地理信息保持
+- USM锐化增强
+- 支持大图分块推理
+- 训练/推理全流程命令行参数可配置
+- 训练过程自动保存最佳模型
+
 ---
 
 ## 评估与工具
@@ -132,5 +151,6 @@ python predict.py
 
 ---
 
-**注意**：请确保已正确安装所有依赖，并准备好格式规范的数据集。 
->>>>>>> d9a2264 (Temporary commit for local changes)
+**注意**：请确保已正确安装所有依赖，并准备好格式规范的数据集。
+
+**免责声明**：部分代码由AI辅助完成，未进行严格的代码审查，使用时请注意检验。

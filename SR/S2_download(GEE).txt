@@ -1,0 +1,66 @@
+var roi =      // 定义区域
+
+/**
+ * 定义云掩膜函数
+ */
+function maskS2clouds(image) {
+  var qa = image.select('QA60');
+  var cloudBitMask = 1 << 10;
+  var cirrusBitMask = 1 << 11;
+  var mask = qa.bitwiseAnd(cloudBitMask).eq(0)
+               .and(qa.bitwiseAnd(cirrusBitMask).eq(0));
+  return image.updateMask(mask).divide(10000);
+}
+
+
+/***************************************
+ *             数据准备阶段              *
+ ***************************************/
+
+// 1. 处理Sentinel-2数据
+var s2 = ee.ImageCollection('COPERNICUS/S2_SR_HARMONIZED')
+  .filterDate('2020-04-01', '2020-10-31')
+  .filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE', 3))
+  .map(maskS2clouds)
+  .select(['B2','B3','B4']) 
+  .mean();
+
+
+/***************************************
+ *           数据统计和缩放              *
+ ***************************************/
+
+// 计算Sentinel-2每个波段的统计值
+var s2Stats = s2.reduceRegion({
+  reducer: ee.Reducer.minMax(),
+  geometry: roi,
+  scale: 10,
+  maxPixels: 1e9
+});
+
+
+// 对Sentinel-2数据进行分波段缩放
+var s2_scaled = ee.Image([ 
+  s2.select('B2').unitScale(s2Stats.get('B2_min'), s2Stats.get('B2_max')).multiply(255).uint8(),
+  s2.select('B3').unitScale(s2Stats.get('B3_min'), s2Stats.get('B3_max')).multiply(255).uint8(),
+  s2.select('B4').unitScale(s2Stats.get('B4_min'), s2Stats.get('B4_max')).multiply(255).uint8()
+]).rename(['B2', 'B3', 'B4']);
+
+
+/***************************************
+ *           批量导出功能实现            *
+ ***************************************/
+
+
+  // 1. 导出缩放后的Sentinel-2数据
+Export.image.toDrive({
+    image: s2_scaled.clip(roi),
+    description: 'S2_8bit',
+    fileNamePrefix: 'S2_8bit',
+    folder: 'test_opt8',
+    region: roi,
+    scale: 10,
+    crs: 'EPSG:4326',
+    maxPixels: 1e13,
+    fileFormat: 'GeoTIFF'
+  });
